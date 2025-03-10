@@ -35,9 +35,9 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 	}
 
 	sessionID := sessCookie.Value
-	sd, err := h.Session.GetSession(r.Context(), sessionID)
+	sd, err := h.st.GetSession(r.Context(), sessionID)
 	if err != nil {
-		http.Error(w, "session db error:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "session error", http.StatusInternalServerError)
 		return
 	}
 	if sd == nil {
@@ -56,25 +56,22 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 		Name:     req.Name,
 		SkkuMail: req.SkkuMail,
 		Phone:    req.Phone,
-		UserType: func() string {
-			if req.SkkuMail == "" {
-				return "external"
-			} else {
-				return "skkuin"
-			}
-		}(),
+		UserType: "external",
 	}
-	user, err := h.Session.UpdateUser(r.Context(), updateUser)
+
+	if req.SkkuMail != "" {
+		updateUser.UserType = "skkuin"
+	}
+
+	user, err := h.st.UpdateUser(r.Context(), updateUser)
 	if err != nil {
-		http.Error(w, "failed to create user:"+err.Error(), http.StatusInternalServerError)
+		http.Error(w, "failed to update user", http.StatusInternalServerError)
 		return
 	}
 
 	jwtToken, _ := h.JWT.CreateJWT(user.ID)
 	h.JWT.SetAuthCookie(w, jwtToken)
+	_ = h.st.DeleteSession(r.Context(), sessionID)
 
-	_ = h.Session.DeleteSession(r.Context(), sessionID)
-
-	// 원래 서비스로 redirect
 	http.Redirect(w, r, sd.OriginalURL, http.StatusFound)
 }

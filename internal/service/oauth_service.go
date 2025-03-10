@@ -3,10 +3,13 @@ package service
 import (
 	"bytes"
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
+	"time"
 
 	"github.com/shj1081/sso/internal/config"
 	"github.com/shj1081/sso/internal/storer"
@@ -22,11 +25,7 @@ func NewOAuthService(cfg *config.Config, st storer.Storer) *OAuthService {
 }
 
 type KakaoTokenResponse struct {
-	AccessToken  string `json:"access_token"`
-	TokenType    string `json:"token_type"`
-	RefreshToken string `json:"refresh_token"`
-	ExpiresIn    int    `json:"expires_in"`
-	Scope        string `json:"scope"`
+	AccessToken string `json:"access_token"`
 }
 
 type KakaoUserInfoResponse struct {
@@ -59,14 +58,12 @@ func (o *OAuthService) GetKakaoAccessToken(code string) (*KakaoTokenResponse, er
 	return &tokenResp, nil
 }
 
-// getKakaoUserInfo uses an access token to fetch a user’s Kakao profile
 func (o *OAuthService) GetKakaoUserInfo(accessToken string) (*KakaoUserInfoResponse, error) {
 	req, err := http.NewRequest("GET", o.cfg.KaKaoUserInfoURI, nil)
 	if err != nil {
 		return nil, err
 	}
 
-	// Bearer token
 	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := http.DefaultClient.Do(req)
@@ -88,16 +85,59 @@ func (o *OAuthService) GetKakaoUserInfo(accessToken string) (*KakaoUserInfoRespo
 	return &userInfo, nil
 }
 
-func (o *OAuthService) FindByKakaoID(ctx context.Context, kakaoID int64) (*storer.User, error) {
-	user, err := o.st.FindByKakaoID(ctx, kakaoID)
+func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, originalURL string) (string, error) {
+	tokenResp, err := o.GetKakaoAccessToken(code)
 	if err != nil {
-		return nil, err
+		return "", fmt.Errorf("failed to get Kakao access token: %w", err)
 	}
 
-	return user, nil
+	userInfo, err := o.GetKakaoUserInfo(tokenResp.AccessToken)
+	if err != nil {
+		return "", fmt.Errorf("failed to get Kakao user info: %w", err)
+	}
+
+	user, err := o.st.FindByKakaoID(ctx, userInfo.ID)
+	if err != nil {
+		return "", err
+	}
+
+	if user == nil {
+		// Temp 유저 생성
+		user = &storer.User{
+			UserType:   "temp",
+			KakaoID:    userInfo.ID,
+			VerifyCode: GenerateRandomString(6),
+		}
+
+		if _, err := o.st.CreateUser(ctx, user); err != nil {
+			return "", err
+		}
+
+		// 세션 생성
+		session := &storer.Session{
+			SessionID:   GenerateRandomString(16),
+			UserId:      user.ID,
+			VerifyCode:  user.VerifyCode,
+			OriginalURL: originalURL,
+			CreatedAt:   time.Now(),
+			ExpiresAt:   time.Now().Add(10 * time.Minute),
+		}
+
+		if err := o.st.CreateSession(ctx, session); err != nil {
+			return "", err
+		}
+
+		return fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+	}
+
+	return originalURL, nil
 }
 
-func (o *OAuthService) redirectFrontend(w http.ResponseWriter, r *http.Request, user *storer.User) {
-	http.Redirect(w, r, fmt.Sprintf("%s?user_id=%d", o.cfg.SSOFeSignupURL, user.ID), http.StatusFound)
-	return
+func GenerateRandomString(n int) string {
+	bytes := make([]byte, n/2)
+	_, err := rand.Read(bytes)
+	if err != nil {
+		panic(err) // 보안적으로 중요한 함수이므로 실패 시 패닉 처리
+	}
+	return hex.EncodeToString(bytes)
 }

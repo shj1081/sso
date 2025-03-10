@@ -20,11 +20,10 @@ func NewServer(cfg *config.Config, st storer.Storer) *Server {
 	// 서비스 계층 생성
 	oauthSvc := service.NewOAuthService(cfg, st)
 	jwtSvc := service.NewJWTService(cfg)
-	sessionSvc := service.NewSessionService(st)
 	emailSvc := service.NewEmailService(cfg, st)
 
 	// 핸들러 생성
-	h := handler.NewHandler(cfg, oauthSvc, jwtSvc, sessionSvc, emailSvc)
+	h := handler.NewHandler(cfg, st, oauthSvc, jwtSvc, emailSvc)
 
 	return &Server{cfg: cfg, st: st, h: h}
 }

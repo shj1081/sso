@@ -16,22 +16,9 @@ type VerifyCodeRequest struct {
 
 // 이메일 인증 코드 요청 API
 func (h *Handler) SendVerification(w http.ResponseWriter, r *http.Request) {
-
-	// session에서 user id 가져오기
 	sessCookie, err := r.Cookie("sso_session")
 	if err != nil {
 		http.Error(w, "no session cookie", http.StatusUnauthorized)
-		return
-	}
-
-	sessionID := sessCookie.Value
-	sd, err := h.Session.GetSession(r.Context(), sessionID)
-	if err != nil {
-		http.Error(w, "session db error:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if sd == nil {
-		http.Error(w, "invalid session", http.StatusUnauthorized)
 		return
 	}
 
@@ -46,8 +33,7 @@ func (h *Handler) SendVerification(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 이메일 전송
-	err = h.Email.SendVerificationEmail(r.Context(), req.Email, sd.VerifyCode)
+	err = h.Email.SendVerificationEmailBySession(r.Context(), sessCookie.Value, req.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -58,8 +44,6 @@ func (h *Handler) SendVerification(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) SendVerificationById(w http.ResponseWriter, r *http.Request) {
-
-	// user id로 verify code 가져오기
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user id is required", http.StatusBadRequest)
@@ -69,11 +53,6 @@ func (h *Handler) SendVerificationById(w http.ResponseWriter, r *http.Request) {
 	userIDInt, err := strconv.ParseInt(userID, 10, 64)
 	if err != nil {
 		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
-		return
-	}
-	verifyCode, err := h.Email.GetVerifyCodeByID(r.Context(), userIDInt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
 
@@ -88,8 +67,7 @@ func (h *Handler) SendVerificationById(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// 이메일 전송
-	err = h.Email.SendVerificationEmail(r.Context(), req.Email, verifyCode)
+	err = h.Email.SendVerificationEmailByUserID(r.Context(), userIDInt, req.Email)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -99,24 +77,10 @@ func (h *Handler) SendVerificationById(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(map[string]string{"status": "success", "message": "Verification email sent"})
 }
 
-// 이메일 인증 코드 확인 API
 func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
-
-	// session에서 user id 가져오기
 	sessCookie, err := r.Cookie("sso_session")
 	if err != nil {
 		http.Error(w, "no session cookie", http.StatusUnauthorized)
-		return
-	}
-
-	sessionID := sessCookie.Value
-	sd, err := h.Session.GetSession(r.Context(), sessionID)
-	if err != nil {
-		http.Error(w, "session db error:"+err.Error(), http.StatusInternalServerError)
-		return
-	}
-	if sd == nil {
-		http.Error(w, "invalid session", http.StatusUnauthorized)
 		return
 	}
 
@@ -126,12 +90,7 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	if req.Code == "" {
-		http.Error(w, "Code is required", http.StatusBadRequest)
-		return
-	}
-
-	err = h.Email.VerifyCode(r.Context(), req.Code, sd.VerifyCode, sd.UserId)
+	err = h.Email.VerifyCodeBySession(r.Context(), sessCookie.Value, req.Code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -142,38 +101,18 @@ func (h *Handler) VerifyCode(w http.ResponseWriter, r *http.Request) {
 }
 
 func (h *Handler) VerifyCodeById(w http.ResponseWriter, r *http.Request) {
-
-	// user id로 verify code 가져오기
 	userID := r.URL.Query().Get("user_id")
 	if userID == "" {
 		http.Error(w, "user id is required", http.StatusBadRequest)
 		return
 	}
 
-	userIDInt, err := strconv.ParseInt(userID, 10, 64)
-	if err != nil {
-		http.Error(w, "Invalid user ID format", http.StatusBadRequest)
-		return
-	}
-
-	verifyCode, err := h.Email.GetVerifyCodeByID(r.Context(), userIDInt)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusInternalServerError)
-		return
-	}
+	userIDInt, _ := strconv.ParseInt(userID, 10, 64)
 
 	var req VerifyCodeRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		http.Error(w, "Invalid request", http.StatusBadRequest)
-		return
-	}
+	json.NewDecoder(r.Body).Decode(&req)
 
-	if req.Code == "" {
-		http.Error(w, "Code is required", http.StatusBadRequest)
-		return
-	}
-
-	err = h.Email.VerifyCode(r.Context(), req.Code, verifyCode, userIDInt)
+	err := h.Email.VerifyCodeByUserID(r.Context(), userIDInt, req.Code)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
