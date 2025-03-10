@@ -9,12 +9,12 @@ type Storer interface {
 	Close() error
 
 	// User 관련
-	FindByKakaoID(ctx context.Context, kakaoID int64) (*User, error)
 	CreateUser(ctx context.Context, u *User) (*User, error)
 	UpdateUser(ctx context.Context, u *User) (*User, error)
-	GetUserByID(ctx context.Context, id int64) (*User, error)
-	GetVerifyCodeByID(ctx context.Context, id int64) (string, error)
 	DeleteUser(ctx context.Context, id int64) error
+	GetUserByID(ctx context.Context, id int64) (*User, error)
+	GetUserByKakaoID(ctx context.Context, kakaoID int64) (*User, error)
+	GetVerifyCodeByID(ctx context.Context, id int64) (string, error)
 
 	// Session 관련
 	CreateSession(ctx context.Context, s *Session) error

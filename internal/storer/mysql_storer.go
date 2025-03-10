@@ -69,20 +69,29 @@ func (ms *MySQLStorer) UpdateUser(ctx context.Context, u *User) (*User, error) {
 	return u, nil
 }
 
-func (ms *MySQLStorer) UpdateUserByKakaoID(ctx context.Context, u *User) (*User, error) {
-	now := time.Now()
-	_, err := ms.db.ExecContext(ctx,
-		`UPDATE users
-		 SET name=?, skku_mail=?, phone=?, usertype=?, updated_at=?
-		 WHERE kakao_id=?`,
-		u.Name, u.SkkuMail, u.Phone, u.UserType, now, u.KakaoID)
+// func (ms *MySQLStorer) UpdateUserByKakaoID(ctx context.Context, u *User) (*User, error) {
+// 	now := time.Now()
+// 	_, err := ms.db.ExecContext(ctx,
+// 		`UPDATE users
+// 		 SET name=?, skku_mail=?, phone=?, usertype=?, updated_at=?
+// 		 WHERE kakao_id=?`,
+// 		u.Name, u.SkkuMail, u.Phone, u.UserType, now, u.KakaoID)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("error updating user by kakao id: %v", err)
+// 	}
+// 	u.UpdatedAt = now
+// 	return u, nil
+// }
+
+func (ms *MySQLStorer) DeleteUser(ctx context.Context, id int64) error {
+	_, err := ms.db.ExecContext(ctx, "DELETE FROM users WHERE id=?", id)
 	if err != nil {
-		return nil, fmt.Errorf("error updating user by kakao id: %v", err)
+		return fmt.Errorf("error deleting user: %v", err)
 	}
-	u.UpdatedAt = now
-	return u, nil
+	return nil
 }
 
+// skkuin 정보도 join 할수 있도록
 func (ms *MySQLStorer) GetUserByID(ctx context.Context, id int64) (*User, error) {
 	var u User
 	err := ms.db.GetContext(ctx, &u, "SELECT * FROM users WHERE id=?", id)
@@ -91,6 +100,18 @@ func (ms *MySQLStorer) GetUserByID(ctx context.Context, id int64) (*User, error)
 			return nil, nil
 		}
 		return nil, fmt.Errorf("error getting user by id: %v", err)
+	}
+	return &u, nil
+}
+
+func (ms *MySQLStorer) GetUserByKakaoID(ctx context.Context, kakaoID int64) (*User, error) {
+	var u User
+	err := ms.db.GetContext(ctx, &u, "SELECT * FROM users WHERE kakao_id=?", kakaoID)
+	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, nil
+		}
+		return nil, fmt.Errorf("error getting user by kakao id: %v", err)
 	}
 	return &u, nil
 }
@@ -105,14 +126,6 @@ func (ms *MySQLStorer) GetVerifyCodeByID(ctx context.Context, id int64) (string,
 		return "", fmt.Errorf("error getting verify code by id: %v", err)
 	}
 	return verifyCode, nil
-}
-
-func (ms *MySQLStorer) DeleteUser(ctx context.Context, id int64) error {
-	_, err := ms.db.ExecContext(ctx, "DELETE FROM users WHERE id=?", id)
-	if err != nil {
-		return fmt.Errorf("error deleting user: %v", err)
-	}
-	return nil
 }
 
 // 세션 관련

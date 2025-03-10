@@ -96,7 +96,7 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		return "", fmt.Errorf("failed to get Kakao user info: %w", err)
 	}
 
-	user, err := o.st.FindByKakaoID(ctx, userInfo.ID)
+	user, err := o.st.GetUserByKakaoID(ctx, userInfo.ID)
 	if err != nil {
 		return "", err
 	}
