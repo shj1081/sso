@@ -3,11 +3,11 @@ package service
 import (
 	"context"
 	"fmt"
-	"net/smtp"
-	"strings"
+	"strconv"
 
 	"github.com/shj1081/sso/internal/config"
 	"github.com/shj1081/sso/internal/storer"
+	"gopkg.in/gomail.v2"
 )
 
 // EmailService 구조체 정의
@@ -26,20 +26,21 @@ func NewEmailService(cfg *config.Config, st storer.Storer) *EmailService {
 
 // 이메일 발송 함수
 func (es *EmailService) SendEmail(to, subject, body string) error {
-	auth := smtp.PlainAuth("", es.cfg.SMTPUser, es.cfg.SMTPPassword, es.cfg.SMTPHost)
+	m := gomail.NewMessage()
+	m.SetHeader("From", es.cfg.SMTPFrom)
+	m.SetHeader("To", to)
+	m.SetHeader("Subject", subject)
+	m.SetBody("text/plain", body)
 
-	// 이메일 메시지 구성
-	msg := fmt.Sprintf("Subject: %s\r\n\r\n%s", subject, body)
-	recipients := strings.Split(to, ",")
+	port, _ := strconv.Atoi(es.cfg.SMTPPort)
+	d := gomail.NewDialer(es.cfg.SMTPHost, port, es.cfg.SMTPUser, es.cfg.SMTPPassword)
+	d.SSL = true
 
-	err := smtp.SendMail(
-		fmt.Sprintf("%s:%s", es.cfg.SMTPHost, es.cfg.SMTPPort),
-		auth,
-		es.cfg.SMTPFrom,
-		recipients,
-		[]byte(msg),
-	)
-	return err
+	if err := d.DialAndSend(m); err != nil {
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+
+	return nil
 }
 
 // 인증 코드 저장 및 이메일 전송
