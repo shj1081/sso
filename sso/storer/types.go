@@ -18,7 +18,7 @@ type SkkuIn struct {
 	SkkuinType string    `json:"skkuin_type" db:"skkuin_type"` // ENUM('student', 'professor', 'staff')
 	Department string    `json:"department" db:"department"`
 	StudentID  string    `json:"student_id," db:"student_id"`
-	UserID     int64     `json:"user_id," db:"user_id"` // FK to users.id, can be NULL
+	UserID     int64     `json:"user_id," db:"user_id"`
 	CreatedAt  time.Time `json:"created_at" db:"created_at "`
 	UpdatedAt  time.Time `json:"updated_at" db:"updated_at"`
 }

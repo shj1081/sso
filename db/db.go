@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/shj1081/sso/config"
 )
 
 type Database struct {
@@ -11,7 +12,10 @@ type Database struct {
 }
 
 func NewDatabase() (*Database, error) {
-	db, err := sqlx.Open("mysql", "root:1234@tcp(localhost:3306)/sso?parseTime=true")
+
+	cfg := config.LoadConfig()
+
+	db, err := sqlx.Open(cfg.DBDriver, cfg.DBURL)
 	if err != nil {
 		return nil, fmt.Errorf("error opening database: %w", err)
 	}

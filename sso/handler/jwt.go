@@ -3,8 +3,13 @@ package handler
 import (
 	"fmt"
 	"net/http"
+	"os"
 	"time"
+
+	"github.com/go-chi/jwtauth"
 )
+
+var tokenAuth = jwtauth.New("HS256", []byte(os.Getenv("JWT_SECRET")), nil)
 
 func createJWTForUser(userID int64) (string, error) {
 	_, tokenString, err := tokenAuth.Encode(map[string]interface{}{

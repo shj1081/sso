@@ -4,21 +4,21 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/go-chi/jwtauth"
+	"github.com/shj1081/sso/config"
 	"github.com/shj1081/sso/sso/server"
 )
-
-var tokenAuth = jwtauth.New("HS256", []byte("your_secret_key"), nil)
 
 type handler struct {
 	ctx    context.Context
 	server *server.Server
+	config *config.Config
 }
 
 func NewHandler(s *server.Server) *handler {
 	return &handler{
 		ctx:    context.Background(),
 		server: s,
+		config: config.LoadConfig(),
 	}
 }
 
