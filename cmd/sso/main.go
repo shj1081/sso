@@ -2,32 +2,38 @@ package main
 
 import (
 	"log"
+	"net/http"
 
-	"github.com/shj1081/sso/config"
-	"github.com/shj1081/sso/db"
-	"github.com/shj1081/sso/sso/handler"
-	"github.com/shj1081/sso/sso/server"
-	"github.com/shj1081/sso/sso/storer"
+	"github.com/shj1081/sso/internal/config"
+	"github.com/shj1081/sso/internal/db"
+	"github.com/shj1081/sso/internal/server"
+	"github.com/shj1081/sso/internal/storer"
 )
 
 func main() {
-	// 환경 변수 로드
-	cfg := config.LoadConfig()
-
-	// 데이터베이스 연결
-	database, err := db.NewDatabase()
+	// 1) 환경 변수 및 Config 로드
+	cfg, err := config.LoadConfig()
 	if err != nil {
-		log.Fatalf("error opening database: %v", err)
+		log.Fatalf("Failed to load config: %v", err)
+	}
+
+	// 2) DB 연결
+	database, err := db.NewDatabase(cfg.DBURL)
+	if err != nil {
+		log.Fatalf("Failed to connect to database: %v", err)
 	}
 	defer database.Close()
 	log.Println("Database connection established")
 
-	// 서버 및 핸들러 설정
-	st := storer.NewMySQLStorer(database.GetDB())
-	srv := server.NewServer(st)
-	hdl := handler.NewHandler(srv)
+	// 3) Storer 생성
+	st := storer.NewMySQLStorer(database)
 
-	// 라우트 등록 및 서버 시작
-	handler.RegisterRoutes(hdl)
-	handler.StartServer(cfg.ServerAddress)
+	// 4) Server 생성
+	srv := server.NewServer(cfg, st)
+
+	// 5) 서버 실행
+	log.Printf("Starting server on %s\n", cfg.ServerAddress)
+	if err := http.ListenAndServe(cfg.ServerAddress, srv.RegisterRoutes()); err != nil {
+		log.Fatalf("Server error: %v", err)
+	}
 }

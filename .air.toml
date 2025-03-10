@@ -1,0 +1,25 @@
+# 기본 설정
+root = "."  # 프로젝트 루트 디렉터리
+tmp_dir = "tmp"
+
+# 빌드 설정
+[build]
+  bin = "tmp/main"  # 컴파일된 바이너리 위치
+  cmd = "go build -o tmp/main ./cmd/sso/main.go"  # 실행할 명령어
+  delay = 1000  # 코드 변경 감지 후 실행까지 대기 시간 (밀리초)
+
+# watch 설정 (감시할 디렉터리 지정)
+[watcher]
+  includes = ["*.go"]
+  excludes = ["tmp", "vendor", "db/migrations"]
+
+# 로그 설정
+[log]
+  level = "debug"
+
+# 파일 변경 감지 설정
+[color]
+  main = "yellow"
+  watcher = "magenta"
+  build = "cyan"
+  runner = "green"
