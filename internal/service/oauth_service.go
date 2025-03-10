@@ -85,20 +85,20 @@ func (o *OAuthService) GetKakaoUserInfo(accessToken string) (*KakaoUserInfoRespo
 	return &userInfo, nil
 }
 
-func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, originalURL string) (string, error) {
+func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, originalURL string) (int64, string, error) {
 	tokenResp, err := o.GetKakaoAccessToken(code)
 	if err != nil {
-		return "", fmt.Errorf("failed to get Kakao access token: %w", err)
+		return 0, "", fmt.Errorf("failed to get Kakao access token: %w", err)
 	}
 
 	userInfo, err := o.GetKakaoUserInfo(tokenResp.AccessToken)
 	if err != nil {
-		return "", fmt.Errorf("failed to get Kakao user info: %w", err)
+		return 0, "", fmt.Errorf("failed to get Kakao user info: %w", err)
 	}
 
 	user, err := o.st.GetUserByKakaoID(ctx, userInfo.ID)
 	if err != nil {
-		return "", err
+		return 0, "", err
 	}
 
 	if user == nil {
@@ -109,28 +109,29 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 			VerifyCode: GenerateRandomString(6),
 		}
 
-		if _, err := o.st.CreateUser(ctx, user); err != nil {
-			return "", err
+		created_user, err := o.st.CreateUser(ctx, user)
+		if err != nil {
+			return 0, "", err
 		}
 
 		// 세션 생성
 		session := &storer.Session{
 			SessionID:   GenerateRandomString(16),
-			UserId:      user.ID,
-			VerifyCode:  user.VerifyCode,
+			UserId:      created_user.ID,
+			VerifyCode:  created_user.VerifyCode,
 			OriginalURL: originalURL,
 			CreatedAt:   time.Now(),
 			ExpiresAt:   time.Now().Add(10 * time.Minute),
 		}
 
 		if err := o.st.CreateSession(ctx, session); err != nil {
-			return "", err
+			return 0, "", err
 		}
 
-		return fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+		return user.ID, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
 	}
 
-	return originalURL, nil
+	return user.ID, originalURL, nil
 }
 
 func GenerateRandomString(n int) string {

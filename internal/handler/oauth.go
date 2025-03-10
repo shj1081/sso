@@ -12,10 +12,15 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	redirectURL, err := h.OAuth.AuthenticateKakaoUser(r.Context(), code, originalURL)
+	userID, redirectURL, err := h.OAuth.AuthenticateKakaoUser(r.Context(), code, originalURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
+	}
+
+	// redirect url이 SSOFeSignupURL가 아닌 경우만 jwt 발급
+	if redirectURL != h.cfg.SSOFeSignupURL {
+		h.JWT.SetAuthCookies(w, userID)
 	}
 
 	http.Redirect(w, r, redirectURL, http.StatusFound)

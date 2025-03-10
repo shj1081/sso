@@ -69,9 +69,7 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	jwtToken, _ := h.JWT.CreateJWT(user.ID)
-	h.JWT.SetAuthCookie(w, jwtToken)
+	h.JWT.SetAuthCookies(w, user.ID)
 	_ = h.st.DeleteSession(r.Context(), sessionID)
-
 	http.Redirect(w, r, sd.OriginalURL, http.StatusFound)
 }
