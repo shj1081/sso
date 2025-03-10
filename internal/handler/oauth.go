@@ -18,8 +18,8 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// redirect url이 SSOFeSignupURL가 아닌 경우만 jwt 발급
-	if redirectURL != h.cfg.SSOFeSignupURL {
+	// return user id가 -1이면 fe로 redirect 되므로, 그 외의 경우만 JWT 발급
+	if userID != -1 {
 		h.JWT.SetAuthCookies(w, userID)
 	}
 

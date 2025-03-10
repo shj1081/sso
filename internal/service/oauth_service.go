@@ -125,7 +125,7 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		}
 
 		if err := o.st.CreateSession(ctx, session); err != nil {
-			return 0, "", err
+			return -1, "", err
 		}
 
 		return user.ID, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
