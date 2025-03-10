@@ -2,20 +2,23 @@ package service
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io"
 	"net/http"
 
 	"github.com/shj1081/sso/internal/config"
+	"github.com/shj1081/sso/internal/storer"
 )
 
 type OAuthService struct {
 	cfg *config.Config
+	st  storer.Storer
 }
 
-func NewOAuthService(cfg *config.Config) *OAuthService {
-	return &OAuthService{cfg: cfg}
+func NewOAuthService(cfg *config.Config, st storer.Storer) *OAuthService {
+	return &OAuthService{cfg: cfg, st: st}
 }
 
 type KakaoTokenResponse struct {
@@ -83,4 +86,18 @@ func (o *OAuthService) GetKakaoUserInfo(accessToken string) (*KakaoUserInfoRespo
 	}
 
 	return &userInfo, nil
+}
+
+func (o *OAuthService) FindByKakaoID(ctx context.Context, kakaoID int64) (*storer.User, error) {
+	user, err := o.st.FindByKakaoID(ctx, kakaoID)
+	if err != nil {
+		return nil, err
+	}
+
+	return user, nil
+}
+
+func (o *OAuthService) redirectFrontend(w http.ResponseWriter, r *http.Request, user *storer.User) {
+	http.Redirect(w, r, fmt.Sprintf("%s?user_id=%d", o.cfg.SSOFeSignupURL, user.ID), http.StatusFound)
+	return
 }

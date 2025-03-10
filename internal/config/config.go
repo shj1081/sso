@@ -16,6 +16,11 @@ type Config struct {
 	SSOFeSignupURL   string
 	DBURL            string
 	ServerAddress    string
+	SMTPHost         string
+	SMTPPort         string
+	SMTPUser         string
+	SMTPPassword     string
+	SMTPFrom         string
 }
 
 func LoadConfig() (*Config, error) {
@@ -33,6 +38,11 @@ func LoadConfig() (*Config, error) {
 		SSOFeSignupURL:   getEnv("SSO_FE_SIGNUP_URL"),
 		DBURL:            getEnv("DB_URL"),
 		ServerAddress:    getEnv("SERVER_ADDRESS"),
+		SMTPHost:         getEnv("SMTP_HOST"),
+		SMTPPort:         getEnv("SMTP_PORT"),
+		SMTPUser:         getEnv("SMTP_USER"),
+		SMTPPassword:     getEnv("SMTP_PASSWORD"),
+		SMTPFrom:         getEnv("SMTP_FROM"),
 	}
 
 	return cfg, nil

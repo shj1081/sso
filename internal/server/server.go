@@ -18,12 +18,13 @@ type Server struct {
 
 func NewServer(cfg *config.Config, st storer.Storer) *Server {
 	// 서비스 계층 생성
-	oauthSvc := service.NewOAuthService(cfg)
+	oauthSvc := service.NewOAuthService(cfg, st)
 	jwtSvc := service.NewJWTService(cfg)
 	sessionSvc := service.NewSessionService(st)
+	emailSvc := service.NewEmailService(cfg, st)
 
 	// 핸들러 생성
-	h := handler.NewHandler(cfg, oauthSvc, jwtSvc, sessionSvc)
+	h := handler.NewHandler(cfg, oauthSvc, jwtSvc, sessionSvc, emailSvc)
 
 	return &Server{cfg: cfg, st: st, h: h}
 }
@@ -34,6 +35,11 @@ func (s *Server) RegisterRoutes() http.Handler {
 	// 핸들러 라우팅 설정
 	r.Get("/auth/kakao/callback", s.h.KakaoCallback)
 	r.Post("/signup", s.h.SubmitSignup)
+
+	r.Post("/send-verification", s.h.SendVerification)
+	r.Post("/verify-code/{userId}", s.h.VerifyCode)
+	r.Post("/verify-code", s.h.VerifyCode)
+	r.Post("/verify-code/{userId}", s.h.VerifyCode)
 
 	return r
 }

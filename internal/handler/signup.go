@@ -51,15 +51,20 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	newUser := &storer.User{
-		KakaoID:  sd.KakaoID,
+	updateUser := &storer.User{
+		ID:       sd.UserId,
 		Name:     req.Name,
 		SkkuMail: req.SkkuMail,
 		Phone:    req.Phone,
-		UserType: req.UserType,
+		UserType: func() string {
+			if req.SkkuMail == "" {
+				return "external"
+			} else {
+				return "skkuin"
+			}
+		}(),
 	}
-
-	user, err := h.Session.CreateUser(r.Context(), newUser)
+	user, err := h.Session.UpdateUser(r.Context(), updateUser)
 	if err != nil {
 		http.Error(w, "failed to create user:"+err.Error(), http.StatusInternalServerError)
 		return
@@ -70,6 +75,6 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 
 	_ = h.Session.DeleteSession(r.Context(), sessionID)
 
-	w.Header().Set("Content-Type", "application/json")
-	json.NewEncoder(w).Encode(user)
+	// 원래 서비스로 redirect
+	http.Redirect(w, r, sd.OriginalURL, http.StatusFound)
 }
