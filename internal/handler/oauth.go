@@ -23,5 +23,16 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		h.JWT.SetAuthCookies(w, userID)
 	}
 
+	// return user id가 -2이면 sso_session 생성 (redirectURL 뒤에서 16글자)
+	if userID == -2 {
+		session_id := redirectURL[len(redirectURL)-16:]
+		session_cookie := &http.Cookie{
+			Name:  "sso_session",
+			Value: session_id,
+		}
+
+		http.SetCookie(w, session_cookie)
+	}
+
 	http.Redirect(w, r, redirectURL, http.StatusFound)
 }
