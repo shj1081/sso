@@ -10,16 +10,16 @@ type Handler struct {
 	cfg   *config.Config
 	st    storer.Storer
 	OAuth *service.OAuthService
-	JWT   *service.JWTService
+	// JWT   *service.JWTService
 	Email *service.EmailService // ✅ 이메일 서비스 추가
 }
 
-func NewHandler(cfg *config.Config, st storer.Storer, oauth *service.OAuthService, jwt *service.JWTService, email *service.EmailService) *Handler {
+func NewHandler(cfg *config.Config, st storer.Storer, oauth *service.OAuthService, email *service.EmailService) *Handler {
 	return &Handler{
 		cfg:   cfg,
 		st:    st,
 		OAuth: oauth,
-		JWT:   jwt,
+		// JWT:   jwt,
 		Email: email,
 	}
 }

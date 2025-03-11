@@ -37,9 +37,9 @@ func (ms *MySQLStorer) FindByKakaoID(ctx context.Context, kakaoID int64) (*User,
 func (ms *MySQLStorer) CreateUser(ctx context.Context, u *User) (*User, error) {
 	now := time.Now()
 	res, err := ms.db.ExecContext(ctx,
-		`INSERT INTO users (name, kakao_id, skku_mail, phone, usertype, verify_code, created_at, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		u.Name, u.KakaoID, u.SkkuMail, u.Phone, u.UserType, u.VerifyCode, now, now)
+		`INSERT INTO users (name, kakao_id, skku_mail, phone, usertype, verify_code)
+         VALUES (?, ?, ?, ?, ?, ?)`,
+		u.Name, u.KakaoID, u.SkkuMail, u.Phone, u.UserType, u.VerifyCode)
 	if err != nil {
 		return nil, fmt.Errorf("error inserting user: %v", err)
 	}
@@ -61,7 +61,7 @@ func (ms *MySQLStorer) UpdateUser(ctx context.Context, u *User) (*User, error) {
 		`UPDATE users
          SET name=?, skku_mail=?, phone=?, usertype=?, updated_at=?
          WHERE id=?`,
-		u.Name, u.KakaoID, u.SkkuMail, u.Phone, u.UserType, now, u.ID)
+		u.Name, u.SkkuMail, u.Phone, u.UserType, now, u.ID)
 	if err != nil {
 		return nil, fmt.Errorf("error updating user: %v", err)
 	}
@@ -131,9 +131,9 @@ func (ms *MySQLStorer) GetVerifyCodeByID(ctx context.Context, id int64) (string,
 // 세션 관련
 func (ms *MySQLStorer) CreateSession(ctx context.Context, s *Session) error {
 	_, err := ms.db.ExecContext(ctx,
-		`INSERT INTO sessions (session_id, user_id, verify_code, original_url, created_at, expires_at)
-         VALUES (?, ?, ?, ?, ?)`,
-		s.SessionID, s.UserId, s.VerifyCode, s.OriginalURL, s.CreatedAt, s.ExpiresAt)
+		`INSERT INTO sessions (session_id, user_id, verify_code, original_url)
+         VALUES (?, ?, ?, ?)`,
+		s.SessionID, s.UserId, s.VerifyCode, s.OriginalURL)
 	if err != nil {
 		return fmt.Errorf("error inserting session: %v", err)
 	}

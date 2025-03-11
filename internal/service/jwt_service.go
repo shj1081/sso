@@ -1,84 +1,82 @@
 package service
 
-import (
-	"net/http"
-	"time"
+// import (
+// 	"net/http"
+// 	"time"
 
-	"github.com/golang-jwt/jwt/v4"
-	"github.com/shj1081/sso/internal/config"
-)
+// 	"github.com/golang-jwt/jwt/v4"
+// 	"github.com/shj1081/sso/internal/config"
+// )
 
-type JWTService struct {
-	cfg *config.Config
-}
+// type JWTService struct {
+// 	cfg *config.Config
+// }
 
-func NewJWTService(cfg *config.Config) *JWTService {
-	return &JWTService{cfg: cfg}
-}
+// func NewJWTService(cfg *config.Config) *JWTService {
+// 	return &JWTService{cfg: cfg}
+// }
 
-type Claims struct {
-	UserID int64 `json:"user_id"`
-	jwt.RegisteredClaims
-}
+// type Claims struct {
+// 	UserID int64 `json:"user_id"`
+// 	jwt.RegisteredClaims
+// }
 
-// Access Token 생성 (유효 기간: 15분)
-func (j *JWTService) CreateAccessToken(userID int64) (string, error) {
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
-		},
-	}
+// // Access Token 생성 (유효 기간: 15분)
+// func (j *JWTService) CreateAccessToken(userID int64) (string, error) {
+// 	claims := &Claims{
+// 		UserID: userID,
+// 		RegisteredClaims: jwt.RegisteredClaims{
+// 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(15 * time.Minute)),
+// 		},
+// 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.cfg.JWTSecret))
-}
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	return token.SignedString([]byte(j.cfg.JWTSecret))
+// }
 
-// Refresh Token 생성 (유효 기간: 7일)
-func (j *JWTService) CreateRefreshToken(userID int64) (string, error) {
-	claims := &Claims{
-		UserID: userID,
-		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
-		},
-	}
+// // Refresh Token 생성 (유효 기간: 7일)
+// func (j *JWTService) CreateRefreshToken(userID int64) (string, error) {
+// 	claims := &Claims{
+// 		UserID: userID,
+// 		RegisteredClaims: jwt.RegisteredClaims{
+// 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(7 * 24 * time.Hour)),
+// 		},
+// 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
-	return token.SignedString([]byte(j.cfg.JWTSecret))
-}
+// 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
+// 	return token.SignedString([]byte(j.cfg.JWTSecret))
+// }
 
-// jwt cookie 생성
-func (j *JWTService) SetAuthCookies(w http.ResponseWriter, userID int64) {
-	accessToken, err := j.CreateAccessToken(userID)
-	if err != nil {
-		http.Error(w, "failed to create access token", http.StatusInternalServerError)
-		return
-	}
+// // jwt cookie 생성
+// func (j *JWTService) SetAuthCookies(w http.ResponseWriter, userID int64) {
+// 	accessToken, err := j.CreateAccessToken(userID)
+// 	if err != nil {
+// 		http.Error(w, "failed to create access token", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	refreshToken, err := j.CreateRefreshToken(userID)
-	if err != nil {
-		http.Error(w, "failed to create refresh token", http.StatusInternalServerError)
-		return
-	}
+// 	refreshToken, err := j.CreateRefreshToken(userID)
+// 	if err != nil {
+// 		http.Error(w, "failed to create refresh token", http.StatusInternalServerError)
+// 		return
+// 	}
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "access_token",
-		Value:    accessToken,
-		Expires:  time.Now().Add(15 * time.Minute),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode, // TODO: 이거 하면 안되려나
-	})
+// 	http.SetCookie(w, &http.Cookie{
+// 		Name:     "access_token",
+// 		Value:    accessToken,
+// 		Expires:  time.Now().Add(15 * time.Minute),
+// 		HttpOnly: false,
+// 		Secure:   true,
+// 	})
 
-	http.SetCookie(w, &http.Cookie{
-		Name:     "refresh_token",
-		Value:    refreshToken,
-		Expires:  time.Now().Add(7 * 24 * time.Hour),
-		HttpOnly: true,
-		Secure:   true,
-		SameSite: http.SameSiteNoneMode, // TODO: 이거 하면 안되려나
-	})
-}
+// 	http.SetCookie(w, &http.Cookie{
+// 		Name:     "refresh_token",
+// 		Value:    refreshToken,
+// 		Expires:  time.Now().Add(7 * 24 * time.Hour),
+// 		HttpOnly: false,
+// 		Secure:   true,
+// 	})
+// }
 
 // 서비스에서 충분히 reissue 가능
 

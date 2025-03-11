@@ -28,12 +28,13 @@ CREATE TABLE `skkuin` (
 -- Create sessions table
 CREATE TABLE `sessions` (
   `session_id` VARCHAR(255) NOT NULL, -- 고유 세션 ID
-  `kakao_id` VARCHAR(255) NOT NULL,
+  `user_id`  INT(11) NOT NULL, -- 세션을 생성한 사용자 ID
+  `verify_code` VARCHAR(6) NOT NULL, -- 세션 생성시 발급된 인증 코드
   `original_url` TEXT NOT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `expires_at` TIMESTAMP NOT NULL DEFAULT (CURRENT_TIMESTAMP + INTERVAL 10 MINUTE),
   PRIMARY KEY (`session_id`), 
-  FOREIGN KEY (`kakao_id`) REFERENCES `users`(`kakao_id`) ON DELETE CASCADE
+  FOREIGN KEY (`user_id`) REFERENCES `users`(`id`) ON DELETE CASCADE
 );
 
 -- 만료된 세션 자동 삭제 이벤트 생성 (MySQL EVENT 스케줄러 사용)

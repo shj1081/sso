@@ -20,11 +20,11 @@ func NewServer(cfg *config.Config, st storer.Storer) *Server {
 
 	// 서비스 계층 생성
 	oauthSvc := service.NewOAuthService(cfg, st)
-	jwtSvc := service.NewJWTService(cfg)
+	// jwtSvc := service.NewJWTService(cfg)
 	emailSvc := service.NewEmailService(cfg, st)
 
 	// 핸들러 생성
-	h := handler.NewHandler(cfg, st, oauthSvc, jwtSvc, emailSvc)
+	h := handler.NewHandler(cfg, st, oauthSvc, emailSvc)
 
 	return &Server{cfg: cfg, st: st, h: h}
 }
@@ -41,6 +41,9 @@ func (s *Server) RegisterRoutes() http.Handler {
 	r.Post("/verify-code/{userId}", s.h.VerifyCode)
 	r.Post("/verify-code", s.h.VerifyCode)
 	r.Post("/verify-code/{userId}", s.h.VerifyCode)
+
+	// test api
+	r.Post("/test/mail", s.h.TestSendEmail)
 
 	return r
 }

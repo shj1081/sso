@@ -26,6 +26,7 @@ func NewEmailService(cfg *config.Config, st storer.Storer) *EmailService {
 
 // 이메일 발송 함수
 func (es *EmailService) SendEmail(to, subject, body string) error {
+
 	m := gomail.NewMessage()
 	m.SetHeader("From", es.cfg.SMTPFrom)
 	m.SetHeader("To", to)
@@ -34,7 +35,7 @@ func (es *EmailService) SendEmail(to, subject, body string) error {
 
 	port, _ := strconv.Atoi(es.cfg.SMTPPort)
 	d := gomail.NewDialer(es.cfg.SMTPHost, port, es.cfg.SMTPUser, es.cfg.SMTPPassword)
-	d.SSL = true
+	d.SSL = false
 
 	if err := d.DialAndSend(m); err != nil {
 		return fmt.Errorf("failed to send email: %w", err)

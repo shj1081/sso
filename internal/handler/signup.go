@@ -3,6 +3,7 @@ package handler
 import (
 	"encoding/json"
 	"net/http"
+	"strconv"
 	"time"
 
 	"github.com/shj1081/sso/internal/storer"
@@ -69,7 +70,9 @@ func (h *Handler) SubmitSignup(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	h.JWT.SetAuthCookies(w, user.ID)
 	_ = h.st.DeleteSession(r.Context(), sessionID)
-	http.Redirect(w, r, sd.OriginalURL, http.StatusFound)
+
+	// user_id를 query parameter로 추가하여 redirect
+	redirect_url_with_user_id := sd.OriginalURL + "?user_id=" + strconv.FormatInt(user.ID, 10)
+	http.Redirect(w, r, redirect_url_with_user_id, http.StatusFound)
 }
