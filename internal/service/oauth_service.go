@@ -130,9 +130,7 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		}
 
 		return -1, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
-	}
-
-	if user.UserType == "temp" {
+	} else if user.UserType == "temp" {
 		// 세션 생성
 		session := &storer.Session{
 			SessionID:   GenerateRandomString(16),
