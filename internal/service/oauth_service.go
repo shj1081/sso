@@ -101,6 +101,7 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		return 0, "", err
 	}
 
+	// TODO: 회원가입하다 나가서 TEMP row가 있는 경우, 세션만 생성하는 로직이 필요 (현재 그냥 원래 서비스로 리다이렉트 해버림)
 	if user == nil {
 		// Temp 유저 생성
 		user = &storer.User{
