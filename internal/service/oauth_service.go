@@ -126,10 +126,29 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		}
 
 		if err := o.st.CreateSession(ctx, session); err != nil {
-			return -1, "", err
+			return 0, "", err
 		}
 
-		return -2, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+		return -1, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+	}
+
+	if user.UserType == "temp" {
+		// 세션 생성
+		session := &storer.Session{
+			SessionID:   GenerateRandomString(16),
+			UserId:      user.ID,
+			VerifyCode:  user.VerifyCode,
+			OriginalURL: originalURL,
+			CreatedAt:   time.Now(),
+			ExpiresAt:   time.Now().Add(10 * time.Minute),
+		}
+
+		if err := o.st.CreateSession(ctx, session); err != nil {
+			return 0, "", err
+		}
+
+		return -1, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+
 	}
 
 	return user.ID, originalURL, nil

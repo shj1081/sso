@@ -19,12 +19,12 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// return user id가 -1이면 fe로 redirect 되므로, 그 외의 경우만 JWT 발급
-	if userID != -1 {
+	if userID > 0 {
 		h.JWT.SetAuthCookies(w, userID)
 	}
 
 	// return user id가 -2이면 sso_session 생성 (redirectURL 뒤에서 16글자)
-	if userID == -2 {
+	if userID == -1 {
 		session_id := redirectURL[len(redirectURL)-16:]
 		session_cookie := &http.Cookie{
 			Name:  "sso_session",
