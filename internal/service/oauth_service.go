@@ -85,21 +85,23 @@ func (o *OAuthService) GetKakaoUserInfo(accessToken string) (*KakaoUserInfoRespo
 	return &userInfo, nil
 }
 
-func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, originalURL string) (int64, string, error) {
+func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, originalURL string) (int64, string, string, error) {
 	tokenResp, err := o.GetKakaoAccessToken(code)
 	if err != nil {
-		return 0, "", fmt.Errorf("failed to get Kakao access token: %w", err)
+		return 0, "", "", fmt.Errorf("failed to get Kakao access token: %w", err)
 	}
 
 	userInfo, err := o.GetKakaoUserInfo(tokenResp.AccessToken)
 	if err != nil {
-		return 0, "", fmt.Errorf("failed to get Kakao user info: %w", err)
+		return 0, "", "", fmt.Errorf("failed to get Kakao user info: %w", err)
 	}
 
 	user, err := o.st.GetUserByKakaoID(ctx, userInfo.ID)
 	if err != nil {
-		return 0, "", err
+		return 0, "", "", err
 	}
+
+	fmt.Println(user.UserType)
 
 	if user == nil {
 		// Temp 유저 생성
@@ -111,7 +113,7 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 
 		created_user, err := o.st.CreateUser(ctx, user)
 		if err != nil {
-			return 0, "", err
+			return 0, "", "", err
 		}
 
 		// 세션 생성
@@ -125,10 +127,12 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		}
 
 		if err := o.st.CreateSession(ctx, session); err != nil {
-			return 0, "", err
+			return 0, "", "", err
 		}
 
-		return -1, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+		fmt.Println("not this root 1")
+
+		return -1, session.SessionID, o.cfg.SSOFeSignupURL, nil
 	} else if user.UserType == "temp" {
 		// 세션 생성
 		session := &storer.Session{
@@ -141,13 +145,17 @@ func (o *OAuthService) AuthenticateKakaoUser(ctx context.Context, code, original
 		}
 
 		if err := o.st.CreateSession(ctx, session); err != nil {
-			return 0, "", err
+			return 0, "", "", err
 		}
 
-		return -1, fmt.Sprintf("%s?session_id=%s", o.cfg.SSOFeSignupURL, session.SessionID), nil
+		fmt.Println("not this root 2")
+
+		return -1, session.SessionID, o.cfg.SSOFeSignupURL, nil
 	}
 
-	return user.ID, originalURL, nil
+	fmt.Println("not this root 3")
+
+	return user.ID, "", originalURL, nil
 }
 
 func GenerateRandomString(n int) string {

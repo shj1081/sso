@@ -12,7 +12,7 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	userID, redirectURL, err := h.OAuth.AuthenticateKakaoUser(r.Context(), code, originalURL)
+	userID, sessionID, redirectURL, err := h.OAuth.AuthenticateKakaoUser(r.Context(), code, originalURL)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
@@ -27,11 +27,10 @@ func (h *Handler) KakaoCallback(w http.ResponseWriter, r *http.Request) {
 
 	// return user id가 -1이면 sso_session 생성 (redirectURL 뒤에서 16글자)
 	if userID == -1 {
-		session_id := redirectURL[len(redirectURL)-16:]
 
 		cookie := &http.Cookie{
-			Name:   "session_id",
-			Value:  session_id,
+			Name:   "sso_session",
+			Value:  sessionID,
 			Path:   "/",
 			Domain: "localhost",
 			Secure: false, // HTTPS가 아니라면 false
